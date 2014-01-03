@@ -80,6 +80,12 @@ FileTree.prototype.handle_data = function(json_string, open_root)
 {
 	var context = this,
 		json = JSON.parse(json_string);
+    /*Input is no longer gauranteed to be good, we need to be able to handle
+    the case where the json is from a failed search */
+    if(!json['id']){
+      console.log('Handling invalid data with no ID. Aborting operation');
+      return;
+    }
 
     context.root = json;
     context.preprocess_tree(context.root);
@@ -579,6 +585,7 @@ Observer.addEvent('load', function() {
 
 Observer.addEvent('initdataloaded', function(data) {
 	file_tree.handle_data(data);
+  parent.postMessage('filetree loaded', '*');
 });
 
 Observer.addEvent('click', function(node) {
@@ -602,7 +609,7 @@ Observer.addEvent('message', function(text){
     file_tree.load_data(text, true);
   } 
   catch(err){
-    console.log("Failed to select node from message. Perhaps it does not exist?", text);
+    console.log("Failed to select node from message.", text);
     console.log(err);
   }
 });
@@ -610,4 +617,6 @@ Observer.addEvent('message', function(text){
 })();
 
 /* Message is for receiving stuff in an iframe, sent like
-/* document.getElementById('hdfs_du').contentWindow.postMessage('/user/travis', '*');
+ document.getElementById('hdfs_du').contentWindow.postMessage('/user/travis', '*'); */
+
+
