@@ -89,4 +89,8 @@
 			}
 		}).send();	
 	});
+
+	window.addEventListener('message', function(e){
+		Observer.fireEvent('message', e.data);
+	});
 })();

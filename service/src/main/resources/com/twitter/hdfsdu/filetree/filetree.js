@@ -597,4 +597,17 @@ Observer.addEvent('back', function(node) {
 	file_tree.up_click(node);
 });
 
+Observer.addEvent('message', function(text){
+  try{
+    file_tree.load_data(text, true);
+  } 
+  catch(err){
+    console.log("Failed to select node from message. Perhaps it does not exist?", text);
+    console.log(err);
+  }
+});
+
 })();
+
+/* Message is for receiving stuff in an iframe, sent like
+/* document.getElementById('hdfs_du').contentWindow.postMessage('/user/travis', '*');
