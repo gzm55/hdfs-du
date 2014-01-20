@@ -577,6 +577,24 @@ FileTree.prototype.test_format_numbers = function()
   });
 }
 
+FileTree.prototype.load_data_message = function(path)
+{
+  var that = this;
+  new XHR({
+    url: this.data_source,
+    params: {
+      path: path,
+      depth: this.depth,
+      limit: this.query_limit
+    },
+    onSuccess: function(text) {
+      that.handle_data(text, true);
+      var Node = that.get_node_by_id(path);
+      if (Node) Observer.fireEvent('treemapupdate', Node);
+    }
+  }).send();
+}
+
 var file_tree;
 
 Observer.addEvent('load', function() {
@@ -585,7 +603,6 @@ Observer.addEvent('load', function() {
 
 Observer.addEvent('initdataloaded', function(data) {
 	file_tree.handle_data(data);
-  parent.postMessage('filetree loaded', '*');
 });
 
 Observer.addEvent('click', function(node) {
@@ -606,7 +623,7 @@ Observer.addEvent('back', function(node) {
 
 Observer.addEvent('message', function(text){
   try{
-    file_tree.load_data(text, true);
+    file_tree.load_data_message(text);
   } 
   catch(err){
     console.log("Failed to select node from message.", text);

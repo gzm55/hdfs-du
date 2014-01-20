@@ -316,6 +316,8 @@ FileTreeMap.prototype = {
 };
 
 var treemap;
+
+
 Observer.addEvent('load', function() {
 	treemap = new FileTreeMap('treemap');
 });
@@ -324,14 +326,29 @@ Observer.addEvent('initdataloaded', function (text) {
 	var json = JSON.parse(text);
 	json = treemap.processJSON(json);
 	treemap.load(json);
+	//This is loaded second, so the message should be
+	//posted from here
+	console.log('hdfs_du loaded');
+	parent.postMessage('hdfs_du loaded', '*');
 });
 
-Observer.addEvent('click', function (nodeId) {
-	treemap.clickHandler(nodeId);
+Observer.addEvent('click', function (node) {
+	treemap.clickHandler(node);
 });
 
-Observer.addEvent('back', function (nodeId) {
-	treemap.backHandler(nodeId);
+Observer.addEvent('back', function (node) {
+	treemap.backHandler(node);
+});
+
+Observer.addEvent('treemapupdate', function (node) {
+	console.log('new tree map update', node);
+	/*TODO: This is a really, really bad solution
+	Something is happening asynchronously with the 
+	treemap load, but I'm not sure what or where so 
+	right now the only way I can make this work is delaying
+	the update.
+	*/
+	setTimeout(function(){treemap.clickHandler(node);}, 1500);
 });
 
 })();
