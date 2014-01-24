@@ -86,9 +86,9 @@ public class SizeByPathServlet extends TextResponseHandler {
 			while (resultSet.next()) {
 				Map<String, String> entry = Maps.newHashMap();
 				entry.put("path", resultSet.getString("path"));
-        entry.put("bytes", resultSet.getString("size_in_bytes"));
-        entry.put("count", resultSet.getString("file_count"));
-        entry.put("leaf", resultSet.getString("leaf"));
+                entry.put("bytes", resultSet.getString("size_in_bytes"));
+                entry.put("count", resultSet.getString("file_count"));
+                entry.put("leaf", resultSet.getString("leaf"));
 				results.add(entry);
 			}
 
