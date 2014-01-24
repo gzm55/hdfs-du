@@ -35,6 +35,8 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.Path;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -107,10 +109,19 @@ public class HdfsDu extends AbstractApplication {
       }
     }
 
-    try {
-      Configuration conf = new Configuration();
-      FSDataInputStream fsDataInputStream = inputPath.getFileSystem(conf)
-          .open(inputPath);
+
+      FSDataInputStream fsDataInputStream = null;
+      try {
+          Configuration conf = new Configuration();
+          fsDataInputStream = inputPath.getFileSystem(conf).open(inputPath);
+      } catch (IOException e) {
+          throw new RuntimeException("Error while trying to open file '" + inputPath +
+                  "'.  Current Directory is: '" + System.getProperty("user.dir") + "'");
+      }
+
+
+      try {
+
       BufferedReader bufferedReader = new BufferedReader(
           new InputStreamReader(fsDataInputStream));
 

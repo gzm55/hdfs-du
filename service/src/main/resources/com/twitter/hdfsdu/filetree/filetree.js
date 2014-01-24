@@ -373,55 +373,66 @@ FileTree.prototype.up_click = function(node) {
   this.load_data(target, true);
 }
 
-// handle node click
+FileTree.prototype.find_node_by_id = function (id, searchNodes) {
 
-FileTree.prototype.click = function(node) {
-
-	console.log('click', node.id);
-
-  var id = node.id;
-  for (var i = 0, l = this.nodes.length; i < l; ++i) {
-	  if (id == this.nodes[i].id) {
-		  node = this.nodes[i];
-		  break;
-	  }
+  for (var i = 0, numNodes = searchNodes.length; i < numNodes; ++i) {
+    var currNode = searchNodes[i];
+    //console.log("trying node with id:" + currNode.id);
+    if (id == currNode.id) {
+      return currNode;
+    }
+    if (id.indexOf(currNode.id) == 0 ) {
+      //console.log("Expanding " + currNode.id + " since " + id + " is a child of it");
+      this.descend_into_node(currNode);
+      console.log("Recursive search into " + currNode.id);
+      return this.find_node_by_id(id, currNode.children);
+    }
   }
 
-  if (i == l) {
-	  console.log('did not find the node');
-	  return;
-  }
+  return;
+}
 
-  console.log("expand click", node.name);
+
+
+FileTree.prototype.descend_into_node = function(node) {
 
   // toggle children on this node
+    this.toggle_children(node);
 
-  this.toggle_children(node);
+    // if this is a bottom most visible node, time to zoom into it
+    if (node.depth == this.depth) {
+      // pretend mouse left this node (cause it's gonna)
+      this.mouseout(node);
 
-  // if this is a bottom most visible node, time to zoom into it
+      // establish node ancestor
+      var ancestor = node.parent;
+      while (ancestor.depth > 1)
+        ancestor = ancestor.parent;
 
-  if (node.depth == this.depth) {
-
-    // pretend mouse left this node (cause it's gonna)
-
-    this.mouseout(node);
-
-    // establish node ancestor
-
-    var ancestor = node.parent;
-    while (ancestor.depth > 1)
-      ancestor = ancestor.parent;
-
-    // load ancestor
-
-    this.load_data(ancestor.id, false);
+      // load ancestor
+      this.load_data(ancestor.id, false);
+    }
+    else {
+      // otherwise simply update this node
+      this.update(node);
+    }
   }
 
-  // otherwise simply update this node
+// handle node click
+FileTree.prototype.click = function(searchNode) {
 
-  else {
-    this.update(node);
+	console.log('click', searchNode.id);
+
+  var foundNode = this.find_node_by_id(searchNode.id, this.nodes);
+  if (!foundNode) {
+    console.log('did not find the node with id:' + searchNode.id);
+    return;
   }
+
+  console.log("expand click", foundNode.name);
+
+  this.descend_into_node(foundNode);
+
 }
 
 // handle node hover
