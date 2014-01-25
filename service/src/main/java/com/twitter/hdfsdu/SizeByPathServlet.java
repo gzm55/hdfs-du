@@ -58,21 +58,27 @@ public class SizeByPathServlet extends TextResponseHandler {
 		Integer paramLimit = request.getParameter("limit") == null ? 100
 				: Integer.parseInt(request.getParameter("limit"));
 
-		Statement statement = HdfsDu.conn.createStatement();
-		String query;
-		if (paramPath.equals("/")) {
-			query = "select * from size_by_path "
-					+ "where (path like '" + paramPath + "%') and path_depth <= "
-					+ paramDepth + " order by path limit " + paramLimit;
-		} else {
-			query = "select * from size_by_path "
-					+ "where (path like '" + paramPath + "/%' or path = '" + paramPath + "') and path_depth <= "
-					+ paramDepth + " order by path limit " + paramLimit;
-		}
-		LOG.info("Running query: " + query);
 
-		return statement.executeQuery(query);
+        return doSizeByPathQuery(paramPath, paramDepth, paramLimit);
 	}
+
+    private ResultSet doSizeByPathQuery(String path, Integer depth, Integer limit) throws SQLException {
+        Statement statement = HdfsDu.conn.createStatement();
+        String query;
+        if (path.equals("/")) {
+            query = "select * from size_by_path "
+                    + "where (path like '" + path + "%') and path_depth <= "
+                    + depth + " order by path limit " + limit;
+        } else {
+            query = "select * from size_by_path "
+                    + "where (path like '" + path + "/%' or path = '" + path + "') and path_depth <= "
+                    + depth + " order by path limit " + limit;
+        }
+        LOG.info("Running query: " + query);
+
+        return statement.executeQuery(query);
+    }
+
 
 	@Override
 	public Iterable<String> getLines(HttpServletRequest request) {
