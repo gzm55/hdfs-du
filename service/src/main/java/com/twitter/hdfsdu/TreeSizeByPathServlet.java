@@ -45,10 +45,10 @@ public class TreeSizeByPathServlet extends SizeByPathServlet {
 			NodeData data;
 			while (resultSet.next()) {
 				data = new NodeData();
-        data.fileSize = resultSet.getString("size_in_bytes");
-        data.nChildren = resultSet.getLong("file_count");
-        data.path = resultSet.getString("path");
-        data.leaf = resultSet.getBoolean("leaf");
+                data.fileSize = resultSet.getString("size_in_bytes");
+                data.nChildren = resultSet.getLong("file_count");
+                data.path = resultSet.getString("path");
+                data.leaf = resultSet.getBoolean("leaf");
 				elems.add(data);
 			}
 			JSONObject jsonObject = DataTransformer.getJSONTree(paramPath, paramDepth, elems);
