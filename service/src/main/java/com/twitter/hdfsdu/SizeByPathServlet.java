@@ -104,6 +104,7 @@ public class SizeByPathServlet extends TextResponseHandler {
                 entry.put("leaf", resultSet.getString("leaf"));
 				results.add(entry);
 			}
+            LOG.info("Query returned " + results.size() + " results.");
 
 			StringWriter stringWriter = new StringWriter();
 			mapper.writeValue(stringWriter, results);

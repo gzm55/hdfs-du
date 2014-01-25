@@ -54,6 +54,8 @@ public class TreeSizeByPathServlet extends SizeByPathServlet {
                 data.leaf = resultSet.getBoolean("leaf");
 				elems.add(data);
 			}
+            LOG.info("Query returned " + elems.size() + " results.");
+
 			JSONObject jsonObject = DataTransformer.getJSONTree(paramPath, paramDepth, elems);
 			
 			String ans = null;
