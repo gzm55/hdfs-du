@@ -59,7 +59,14 @@ public class SizeByPathServlet extends TextResponseHandler {
 				: Integer.parseInt(request.getParameter("limit"));
 
 
-        return doSizeByPathQuery(paramPath, paramDepth, paramLimit);
+        long start = System.nanoTime();
+        ResultSet sizeByPathResultSet = doSizeByPathQuery(paramPath, paramDepth, paramLimit);
+        long end = System.nanoTime();
+
+        long query_elapsed_msec = (end - start)/1000000;
+        LOG.info("Query time: " + query_elapsed_msec + " ms.");
+
+        return sizeByPathResultSet;
 	}
 
     private ResultSet doSizeByPathQuery(String path, Integer depth, Integer limit) throws SQLException {
