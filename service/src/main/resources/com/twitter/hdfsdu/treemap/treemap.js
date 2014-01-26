@@ -341,14 +341,13 @@ Observer.addEvent('back', function (node) {
 });
 
 Observer.addEvent('treemapupdate', function (node) {
-	console.log('new tree map update', node);
-	/*TODO: This is a really, really bad solution
-	Something is happening asynchronously with the 
-	treemap load, but I'm not sure what or where so 
-	right now the only way I can make this work is delaying
-	the update.
-	*/
-	setTimeout(function(){treemap.clickHandler(node);}, 1500);
+	//console.log('new tree map update', node);
+	/*TODO: This needs to be on a timeout to work.
+	It's not the greatest solution but it wasn't immediately
+	apparent what was happening asynchronously, so we'll have to
+	come back to this. It looks like 1000 is the smallest value
+	we can get away with here.	*/
+	setTimeout(function(){treemap.clickHandler(node);}, 1000);
 });
 
 })();
