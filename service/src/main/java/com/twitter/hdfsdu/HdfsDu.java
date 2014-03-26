@@ -66,7 +66,7 @@ public class HdfsDu extends AbstractApplication {
   private static final Arg<Boolean> USE_RESOURCES = Arg.create(true);
 
   @CmdLine(name = "title", help = "Title displayed on index HTML page")
-  private static final Arg<String> TITLE = ARG.create("HDFS_DU");
+  private static final Arg<String> TITLE = Arg.create("HDFS_DU");
 
   public static String getTitle(){
     return TITLE.get();
