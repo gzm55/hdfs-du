@@ -65,6 +65,13 @@ public class HdfsDu extends AbstractApplication {
   @CmdLine(name = "use_resources", help = "Use resources bundled in the jar")
   private static final Arg<Boolean> USE_RESOURCES = Arg.create(true);
 
+  @CmdLine(name = "title", help = "Title displayed on index HTML page")
+  private static final Arg<String> TITLE = ARG.create("HDFS_DU");
+
+  public static String getTitle(){
+    return TITLE.get();
+  }
+
   public void run() {
     LOG.info("Starting HdfsDu.");
     startDb();
@@ -199,6 +206,8 @@ public class HdfsDu extends AbstractApplication {
           SizeByPathServlet.class, false);
       Registration.registerServlet(binder(), "/tree_size_by_path",
           TreeSizeByPathServlet.class, false);
+      Registration.registerServlet(binder(), "/misc",
+          Misc.class, false);
 
       if (USE_RESOURCES.get()) {
         // JANK ALERT

@@ -76,6 +76,17 @@
 	
 	window.addEventListener('DOMContentLoaded', function(e) {
 		Observer.fireEvent('load', e);
+
+		new XHR({
+			url: '/misc',
+			params: {}, 
+			onSuccess: function(text) {
+				res = JSON.parse(text)
+				$("#title").text(res['title'])
+				//Any other misc stuff we need to fetch
+				//from the application would go here
+			}
+		}).send();
 		
 		new XHR({
 			url: '/tree_size_by_path',
