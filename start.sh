@@ -10,7 +10,8 @@ cd hdfsdu-service-${HDFSDU_VERSION}
 pwd
 java -Xms2048m -Xmx2048m -cp 'lib/*' \
   com.twitter.hdfsdu.HdfsDu \
-    -http_port=20000 \
+    -http_port=$3 \
+    -title=$2 \
     -use_glog \
     -use_glog_formatter \
     -input_path=$1

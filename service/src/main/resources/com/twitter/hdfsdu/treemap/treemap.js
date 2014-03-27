@@ -281,6 +281,27 @@ FileTreeMap.prototype = {
 			par = par[0].getParents();
 		}
 		this.bc.innerHTML = names.join(' &rsaquo; ');
+		//Added code here to update a table we display below
+		this.updateGraph();
+	},
+
+	updateGraph: function(){
+		console.log("update graph");
+		list = document.querySelectorAll(".temp");
+		for(var i = 0; i < list.length; ++i){
+			list[i].parentNode.removeChild(list[i])
+		}
+		var table = document.getElementById('data');
+		var counter = 1;
+		this.tm.graph.eachNode(function(n){
+			var r = table.insertRow(counter);
+			counter = counter+1;
+			r.className = "temp";
+			r.id = "table-"+n.id;
+			r.insertCell(0).innerHTML = '<a href="/" onclick="Observer.fireEvent(\'message\',\''+n.id+'\'); return false;">'+n.id+'</a>';
+			r.insertCell(1).innerHTML = n.data.fileSize;
+			r.insertCell(2).innerHTML = n.data.nChildren;
+		});
 	},
 	
 	parseFileSize: function(size, decimals) {
@@ -289,10 +310,18 @@ FileTreeMap.prototype = {
 	},
 	
 	clickHandler: function(nodeElem) {
+		//TODO: this doesn't sufficiently handle search related things, because if
+		//we're not a descendant of the root we just go back once, which is no good
 		var tm = this.tm,
 			node = tm.graph.getNode(nodeElem.id),
 			currentRoot = (tm.clickedNode || tm.graph.getNode(tm.root)).id;
+
+		//!node.isDescendantOf(currentRoot) was the old condition, but really before searches
+		//there were two conditions - either it was the same node, or it was a parent/nonparent node
+		//one level above. if it's not either of those we're searching for it and it's the same as if
+		//we're zooming into it
 		
+		//node==currentRoot || node.id.split("/").length-2 == currentRoot.id.split("/").length-1
 		if (!node.isDescendantOf(currentRoot)) {
 			this.backHandler();
 			return;
@@ -329,6 +358,7 @@ Observer.addEvent('initdataloaded', function (text) {
 	//This is loaded second, so the message should be
 	//posted from here
 	console.log('hdfs_du loaded');
+	treemap.updateGraph();
 	parent.postMessage('hdfs_du loaded', '*');
 });
 
