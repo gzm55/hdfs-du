@@ -111,7 +111,7 @@ function FileTreeMap(chart_id) {
 	
 	  this.tm = tm;
 	  this.bc = $('breadcrumb');
-	  this.currentRoot = '/';
+	  this.currentRootId = '/';
 
 	  $('back').addEventListener('click', function() {
 		  if (tm.clickedNode) Observer.fireEvent('back', tm.clickedNode)
@@ -152,6 +152,10 @@ FileTreeMap.prototype = {
 	load: function(json) {
 		this.tm.loadJSON(json);
 		this.tm.refresh();
+	},
+
+	currentRoot: function() {
+		return this.tm.graph.getNode(this.currentRootId);
 	},
 	
 	processJSON: function(json) {
@@ -275,32 +279,32 @@ FileTreeMap.prototype = {
 		});
 	},
 	
-	updateBreadCrumb: function(node) {
+	updateHTML: function(node) {
 		if (!node) return;
+
 		var names = [node.name],
-			par = node.getParents();
+			parents = node.getParents();
 		
-		while (par.length) {
-			names.unshift(par[0].name);
-			par = par[0].getParents();
+		while (parents.length) {
+			names.unshift(parents[0].name);
+			parents = parents[0].getParents();
 		}
 		this.bc.innerHTML = names.join(' &rsaquo; ');
-		//Added code here to update a table we display below
+
 		this.updateGraph();
 	},
 
 	updateGraph: function(){
-		console.log("update graph");
 		list = document.querySelectorAll(".temp");
 		for(var i = 0; i < list.length; ++i){
 			list[i].parentNode.removeChild(list[i])
 		}
 		var table = document.getElementById('data');
 		var counter = 1;
-		var currentRoot = this.currentRoot;
+		var currentRootId = this.currentRootId;
 		this.tm.graph.eachNode(function(n){
 
-			if (n.id.indexOf(currentRoot)==0){
+			if (n.id.indexOf(currentRootId)==0){
 				var r = table.insertRow(counter);
 				counter = counter+1;
 				r.className = "temp";
@@ -318,51 +322,60 @@ FileTreeMap.prototype = {
 		return size.slice(0, len - decimals) + '.' + size.slice(len-decimals);
 	},
 	
-	clickHandler: function(nodeElem) {
-		//TODO: this doesn't sufficiently handle search related things, because if
-		//we're not a descendant of the root we just go back once, which is no good
-
-		//currentRoot renamed rootThing because it was definitely not the current root,
-		//but we're still using this variable right now
+	seek: function(nodeElem) {
 		var tm = this.tm,
-			node = tm.graph.getNode(nodeElem.id)
-			rootThing = (tm.clickedNode || tm.graph.getNode(tm.root)).id;
+			node = tm.graph.getNode(nodeElem.id),
+			effectiveRoot = (tm.clickedNode || tm.graph.getNode(tm.root));
+
+		//TODO: change this to use only the node variable and currentRoot()
+
+		//The above is highly resemblant to witchraft. Here's what happens here. The only time
+		//that tm.clickedNode is actually NULL is if the right hand side chart is clicked before
+		//the treemap has been clicked ONCE. After that, the node is going to be the last clicked
+		//node on the treemap unless it was set as part of this click. These guys.
 
 		if(!tm.clickedNode){
 			console.log("tm.clockedNode is null");
 		}
 
 
-		if (node.isDescendantOf(rootThing)){
+		if (node.isDescendantOf(effectiveRoot.id)){
 			this.descendHandler(node);
-		} else if (rootThing.isDescendantOf(node)){
+		} else if (effectiveRoot.isDescendantOf(node)){
 			this.backHandler();
+		} else {
+			this.farHandler(node);
 		}
 		
 	},
 	
 	farHandler: function(node) {
-		
-	}
+		var tm = this.tm;
+
+		console.log("far handler on node below");
+		console.log(node)
+	},
 
 
 	descendHandler: function(node) {
 		var tm = this.tm;
-		this.currentRoot = node.id;
-    	tm.enter(node);
-    	this.updateBreadCrumb(node);
-	}
 
-	backHandler: function() {
+		this.currentRootId = node.id;
+    	tm.enter(node);
+    	this.updateHTML(node);
+	},
+
+	backHandler: function(node) {
 		var tm = this.tm;
-	
+		console.log("backhandler node below")
+		console.log(node)
 		if (!tm.clickedNode) return;
 		
-		var par = tm.clickedNode.getParents()[0];
-		if (par) {
+		var parent = tm.clickedNode.getParents()[0];
+		if (parent) {
 	        tm.out();
-	        this.currentRoot = par.id;
-	    	this.updateBreadCrumb(par);
+	        this.currentRootId = parent.id;
+	    	this.updateHTML(parent);
 		}
 	}
 };
@@ -391,7 +404,7 @@ Observer.addEvent('initdataloaded', function (text) {
 });
 
 Observer.addEvent('click', function (node) {
-	treemap.clickHandler(node);
+	treemap.seek(node);
 });
 
 Observer.addEvent('back', function (node) {
@@ -405,7 +418,7 @@ Observer.addEvent('treemapupdate', function (node) {
 	apparent what was happening asynchronously, so we'll have to
 	come back to this. It looks like 1000 is the smallest value
 	we can get away with here.	*/
-	setTimeout(function(){treemap.clickHandler(node);}, 1000);
+	setTimeout(function(){treemap.seek(node);}, 1000);
 });
 
 })();
