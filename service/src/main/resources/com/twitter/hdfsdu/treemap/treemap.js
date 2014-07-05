@@ -43,6 +43,7 @@ function FileTreeMap(chart_id) {
 	    offset: 1,
 	    duration: 1000,
 	    hideLabels: true,
+	    currentRoot: '/',
 	    Label: {
 	    	type: 'HTML',
 //	    	type: 'Native',//'HTML',
@@ -276,6 +277,7 @@ FileTreeMap.prototype = {
 	
 	updateBreadCrumb: function(node) {
 		if (!node) return;
+		currentRoot = node;
 		var names = [node.name],
 			par = node.getParents();
 		
@@ -315,17 +317,20 @@ FileTreeMap.prototype = {
 	clickHandler: function(nodeElem) {
 		//TODO: this doesn't sufficiently handle search related things, because if
 		//we're not a descendant of the root we just go back once, which is no good
-		var tm = this.tm,
-			node = tm.graph.getNode(nodeElem.id),
-			currentRoot = (tm.clickedNode || tm.graph.getNode(tm.root)).id;
 
-		//!node.isDescendantOf(currentRoot) was the old condition, but really before searches
+		//currentRoot renamed rootThing because it was definitely not the current root,
+		//but we're still using this variable right now
+		var tm = this.tm,
+			node = tm.graph.getNode(nodeElem.id)
+			rootThing = (tm.clickedNode || tm.graph.getNode(tm.root)).id;
+
+		//!node.isDescendantOf(rootThing) was the old condition, but really before searches
 		//there were two conditions - either it was the same node, or it was a parent/nonparent node
 		//one level above. if it's not either of those we're searching for it and it's the same as if
 		//we're zooming into it
 		
-		//node==currentRoot || node.id.split("/").length-2 == currentRoot.id.split("/").length-1
-		if (!node.isDescendantOf(currentRoot)) {
+		//node==rootThing || node.id.split("/").length-2 == rootThing.id.split("/").length-1
+		if (!node.isDescendantOf(rootThing)) {
 			this.backHandler();
 			return;
 		}
