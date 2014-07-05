@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+
+ var publicTM;
+
 (function() {
 
 var queryLimit = 50000,
@@ -349,11 +352,16 @@ var treemap;
 
 Observer.addEvent('load', function() {
 	treemap = new FileTreeMap('treemap');
+	publicTM = treemap;
 });
 
 Observer.addEvent('initdataloaded', function (text) {
 	var json = JSON.parse(text);
+	console.log("preprocess json")
+	console.log(json)
 	json = treemap.processJSON(json);
+	console.log("postprocess json")
+	console.log(json)
 	treemap.load(json);
 	//This is loaded second, so the message should be
 	//posted from here
