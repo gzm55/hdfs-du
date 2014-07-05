@@ -43,7 +43,6 @@ function FileTreeMap(chart_id) {
 	    offset: 1,
 	    duration: 1000,
 	    hideLabels: true,
-	    currentRoot: '/',
 	    Label: {
 	    	type: 'HTML',
 //	    	type: 'Native',//'HTML',
@@ -112,6 +111,7 @@ function FileTreeMap(chart_id) {
 	
 	  this.tm = tm;
 	  this.bc = $('breadcrumb');
+	  this.currentRoot = '/';
 
 	  $('back').addEventListener('click', function() {
 		  if (tm.clickedNode) Observer.fireEvent('back', tm.clickedNode)
@@ -277,7 +277,7 @@ FileTreeMap.prototype = {
 	
 	updateBreadCrumb: function(node) {
 		if (!node) return;
-		currentRoot = node;
+		this.currentRoot = node.id;
 		var names = [node.name],
 			par = node.getParents();
 		
@@ -298,14 +298,19 @@ FileTreeMap.prototype = {
 		}
 		var table = document.getElementById('data');
 		var counter = 1;
+		var currentRoot = this.currentRoot;
 		this.tm.graph.eachNode(function(n){
-			var r = table.insertRow(counter);
-			counter = counter+1;
-			r.className = "temp";
-			r.id = "table-"+n.id;
-			r.insertCell(0).innerHTML = '<a href="/" onclick="Observer.fireEvent(\'message\',\''+n.id+'\'); return false;">'+n.id+'</a>';
-			r.insertCell(1).innerHTML = n.data.fileSize;
-			r.insertCell(2).innerHTML = n.data.nChildren;
+
+			if (n.id.indexOf(currentRoot)==0){
+				var r = table.insertRow(counter);
+				counter = counter+1;
+				r.className = "temp";
+				r.id = "table-"+n.id;
+				r.insertCell(0).innerHTML = '<a href="/" onclick="Observer.fireEvent(\'message\',\''+n.id+'\'); return false;">'+n.id+'</a>';
+				r.insertCell(1).innerHTML = n.data.fileSize;
+				r.insertCell(2).innerHTML = n.data.nChildren;
+			}
+
 		});
 	},
 	

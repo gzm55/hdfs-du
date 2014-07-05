@@ -374,14 +374,14 @@ FileTree.prototype.up_click = function(node) {
 }
 
 FileTree.prototype.find_node_by_id = function (id, searchNodes) {
-
+  if (!searchNodes) return;
   for (var i = 0, numNodes = searchNodes.length; i < numNodes; ++i) {
     var currNode = searchNodes[i];
     //console.log("trying node with id:" + currNode.id);
     if (id == currNode.id) {
       return currNode;
     }
-    if (id.indexOf(currNode.id) == 0 ) {
+    if (id.indexOf(currNode.id)) {
       //console.log("Expanding " + currNode.id + " since " + id + " is a child of it");
       this.descend_into_node(currNode);
       console.log("Recursive search into " + currNode.id);
