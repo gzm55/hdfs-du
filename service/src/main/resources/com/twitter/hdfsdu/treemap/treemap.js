@@ -277,7 +277,6 @@ FileTreeMap.prototype = {
 	
 	updateBreadCrumb: function(node) {
 		if (!node) return;
-		this.currentRoot = node.id;
 		var names = [node.name],
 			par = node.getParents();
 		
@@ -329,21 +328,31 @@ FileTreeMap.prototype = {
 			node = tm.graph.getNode(nodeElem.id)
 			rootThing = (tm.clickedNode || tm.graph.getNode(tm.root)).id;
 
-		//!node.isDescendantOf(rootThing) was the old condition, but really before searches
-		//there were two conditions - either it was the same node, or it was a parent/nonparent node
-		//one level above. if it's not either of those we're searching for it and it's the same as if
-		//we're zooming into it
-		
-		//node==rootThing || node.id.split("/").length-2 == rootThing.id.split("/").length-1
-		if (!node.isDescendantOf(rootThing)) {
+		if(!tm.clickedNode){
+			console.log("tm.clockedNode is null");
+		}
+
+
+		if (node.isDescendantOf(rootThing)){
+			this.descendHandler(node);
+		} else if (rootThing.isDescendantOf(node)){
 			this.backHandler();
-			return;
 		}
 		
-    	tm.enter(node);
-    	this.updateBreadCrumb(node);
 	},
 	
+	farHandler: function(node) {
+		
+	}
+
+
+	descendHandler: function(node) {
+		var tm = this.tm;
+		this.currentRoot = node.id;
+    	tm.enter(node);
+    	this.updateBreadCrumb(node);
+	}
+
 	backHandler: function() {
 		var tm = this.tm;
 	
@@ -352,6 +361,7 @@ FileTreeMap.prototype = {
 		var par = tm.clickedNode.getParents()[0];
 		if (par) {
 	        tm.out();
+	        this.currentRoot = par.id;
 	    	this.updateBreadCrumb(par);
 		}
 	}
