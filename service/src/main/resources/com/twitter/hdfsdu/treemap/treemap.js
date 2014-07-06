@@ -86,9 +86,16 @@ function FileTreeMap(chart_id) {
 				tip.innerHTML = html;
 	      }  
 	    },
+
+	    // onAfterCompute: function(){
+	    // 	console.log("AFTER COMPUTE");
+	    // },
 	    
 	    request: function(nodeId, level, callback){
+	    	//This code is called any time we try and get into any node, and multiple times when we get into a node with
+	    	//many children
 	    	if (level <= depth -1) {
+	    		treemap.checkSearchLock();
 	    		callback.onComplete(nodeId, { children: [] });
 	    		return;
 	    	}
@@ -103,6 +110,7 @@ function FileTreeMap(chart_id) {
 	    			var json = JSON.parse(text);
 	    			json = treemap.processJSON(json);
 	    			json.id = nodeId;
+	    			treemap.checkSearchLock();
 	    			callback.onComplete(nodeId, json);
 	    		}
 	    	}).send();
@@ -111,17 +119,26 @@ function FileTreeMap(chart_id) {
 	
 	  this.tm = tm;
 	  this.bc = $('breadcrumb');
-	  this.currentRootId = '/';
+	  this.currentNodeID = '/';
 
+	  	//broken for reasons unclear to me
+		  var loading_chart=$('#'+chart_id).children().first().clone().prop({id: "treemap-loading"});
+		  loading_chart.hide();
+		  $('#'+chart_id).append(loading_chart);
+
+
+		  //TODO: consider adding a refresh button that maybe also clears searchlocks (though not prematurely, we hope...)
 	  $('back').addEventListener('click', function() {
 		  if (tm.clickedNode) Observer.fireEvent('back', tm.clickedNode)
 	  });
 	  size.addEventListener('click', function(e) {
+	  	  if (that.searchLock) return;
 		  size.classList.add('selected');
 		  count.classList.remove('selected');
 		  that.setSize();
 	  });
 	  count.addEventListener('click', function(e) {
+	  	  if (that.searchLock) return;
 		  count.classList.add('selected');
 		  size.classList.remove('selected');
 		  that.setCount();
@@ -154,8 +171,8 @@ FileTreeMap.prototype = {
 		this.tm.refresh();
 	},
 
-	currentRoot: function() {
-		return this.tm.graph.getNode(this.currentRootId);
+	getCurrentNode: function() {
+		return this.tm.graph.getNode(this.currentNodeID);
 	},
 	
 	processJSON: function(json) {
@@ -301,10 +318,10 @@ FileTreeMap.prototype = {
 		}
 		var table = document.getElementById('data');
 		var counter = 1;
-		var currentRootId = this.currentRootId;
+		var currentNodeID = this.currentNodeID;
 		this.tm.graph.eachNode(function(n){
 
-			if (n.id.indexOf(currentRootId)==0){
+			if (n.id.substr(0, currentNodeID.length) == currentNodeID){
 				var r = table.insertRow(counter);
 				counter = counter+1;
 				r.className = "temp";
@@ -321,60 +338,70 @@ FileTreeMap.prototype = {
 		var len = size.length;
 		return size.slice(0, len - decimals) + '.' + size.slice(len-decimals);
 	},
+
+	setSearchLock: function() {
+		this.pendingSearchLock = true;
+		this.searchLock = true;
+		$("#treemap-canvaswidget").hide()
+		$("#treemap-loading").show();
+	},
+
+	clearSearchLock: function() {
+		this.searchLock = false;
+		$("#treemap-loading").hide()
+		$("#treemap-canvaswidget").show();
+	},
+
+	checkSearchLock: function() {
+		if (!this.pendingSearchLock) return;
+		this.pendingSearchLock = false;
+		var that = this;
+		setTimeout(function(){that.clearSearchLock()}, 1700);
+	},
 	
 	seek: function(nodeElem) {
 		var tm = this.tm,
 			node = tm.graph.getNode(nodeElem.id),
-			effectiveRoot = (tm.clickedNode || tm.graph.getNode(tm.root));
-
-		//TODO: change this to use only the node variable and currentRoot()
-
-		//The above is highly resemblant to witchraft. Here's what happens here. The only time
-		//that tm.clickedNode is actually NULL is if the right hand side chart is clicked before
-		//the treemap has been clicked ONCE. After that, the node is going to be the last clicked
-		//node on the treemap unless it was set as part of this click. These guys.
-
-		if(!tm.clickedNode){
-			console.log("tm.clockedNode is null");
-		}
+			currentNode = this.getCurrentNode();
 
 
-		if (node.isDescendantOf(effectiveRoot.id)){
+		if (node.isDescendantOf(currentNode.id)){
 			this.descendHandler(node);
-		} else if (effectiveRoot.isDescendantOf(node)){
+		} else if (currentNode.isDescendantOf(node.id)){
 			this.backHandler();
-		} else {
-			this.farHandler(node);
+		} else if (node.id != currentNode.id){
+			this.searchHandler(node);
 		}
 		
 	},
 	
-	farHandler: function(node) {
+	searchHandler: function(node) {
 		var tm = this.tm;
+		this.setSearchLock();
 
-		console.log("far handler on node below");
-		console.log(node)
+		this.currentNodeID = node.id;
+		tm.enter(node);
+		this.updateHTML(node);
 	},
 
 
 	descendHandler: function(node) {
 		var tm = this.tm;
 
-		this.currentRootId = node.id;
+		this.currentNodeID = node.id;
     	tm.enter(node);
     	this.updateHTML(node);
 	},
 
-	backHandler: function(node) {
+	backHandler: function() {
 		var tm = this.tm;
-		console.log("backhandler node below")
-		console.log(node)
-		if (!tm.clickedNode) return;
+
+		if (this.currentNodeID == '/') return;
 		
-		var parent = tm.clickedNode.getParents()[0];
+		var parent = this.getCurrentNode().getParents()[0];
 		if (parent) {
 	        tm.out();
-	        this.currentRootId = parent.id;
+	        this.currentNodeID = parent.id;
 	    	this.updateHTML(parent);
 		}
 	}
@@ -390,35 +417,33 @@ Observer.addEvent('load', function() {
 
 Observer.addEvent('initdataloaded', function (text) {
 	var json = JSON.parse(text);
-	console.log("preprocess json")
-	console.log(json)
 	json = treemap.processJSON(json);
-	console.log("postprocess json")
-	console.log(json)
 	treemap.load(json);
-	//This is loaded second, so the message should be
-	//posted from here
-	console.log('hdfs_du loaded');
 	treemap.updateGraph();
-	parent.postMessage('hdfs_du loaded', '*');
 });
 
 Observer.addEvent('click', function (node) {
+	if (treemap.searchLock) return;
 	treemap.seek(node);
 });
 
 Observer.addEvent('back', function (node) {
-	treemap.backHandler(node);
+	if (treemap.searchLock) return;
+	treemap.backHandler();
 });
 
-Observer.addEvent('treemapupdate', function (node) {
-	//console.log('new tree map update', node);
-	/*TODO: This needs to be on a timeout to work.
-	It's not the greatest solution but it wasn't immediately
-	apparent what was happening asynchronously, so we'll have to
-	come back to this. It looks like 1000 is the smallest value
-	we can get away with here.	*/
-	setTimeout(function(){treemap.seek(node);}, 1000);
+Observer.addEvent('search', function (node) {
+	if (treemap.searchLock) return;
+	treemap.seek(treemap.tm.graph.getNode(node));
 });
+
+// Observer.addEvent('treemapupdate', function (node) {
+// 	// TODO: This needs to be on a timeout to work.
+// 	// It's not the greatest solution but it wasn't immediately
+// 	// apparent what was happening asynchronously, so we'll have to
+// 	// come back to this. It looks like 1000 is the smallest value
+// 	// we can get away with here.	
+// 	setTimeout(function(){treemap.seek(node);}, 1000);
+// });
 
 })();
