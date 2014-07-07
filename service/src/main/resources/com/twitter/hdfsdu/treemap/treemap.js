@@ -90,10 +90,6 @@ function FileTreeMap(chart_id) {
 				tip.innerHTML = html;
 	      }  
 	    },
-
-	    // onAfterCompute: function(){
-	    // 	console.log("AFTER COMPUTE");
-	    // },
 	    
 	    request: function(nodeId, level, callback){
 	    	//This code is called any time we try and get into any node, and multiple times when we get into a node with
@@ -130,8 +126,6 @@ function FileTreeMap(chart_id) {
 	  loading_chart.append("<img src='loading.gif' style='width:100%; height:100%'>");
 
 
-
-		  //TODO: consider adding a refresh button, just in case our searchlocks aren't long enough
 	  $('back').addEventListener('click', function() {
 		  if (tm.clickedNode) Observer.fireEvent('back', tm.clickedNode)
 	  });
@@ -361,8 +355,14 @@ FileTreeMap.prototype = {
 		if (!this.pendingSearchLock) return;
 		this.pendingSearchLock = false;
 		var that = this;
-		//Doesn't seem like a value below 1900 reliably works
-		setTimeout(function(){that.clearSearchLock()}, 1700);
+		//Doesn't seem like a value below 1700 reliably works
+		setTimeout(function(){that.clearSearchLock();}, 1500);
+	},
+
+	setBusy: function(duration){
+		this.busy = true;
+		var that = this;
+		setTimeout(function(){that.busy = false;}, duration);
 	},
 	
 	seek: function(nodeElem) {
@@ -382,7 +382,9 @@ FileTreeMap.prototype = {
 	},
 	
 	searchHandler: function(node) {
+		if (this.busy) return;
 		var tm = this.tm;
+		this.setBusy(2700); //searchLock time + 1200
 		this.setSearchLock();
 
 		this.currentNodeID = node.id;
@@ -392,7 +394,9 @@ FileTreeMap.prototype = {
 
 
 	descendHandler: function(node) {
+		if (this.busy) return;
 		var tm = this.tm;
+		this.setBusy(1200);
 
 		this.currentNodeID = node.id;
     	tm.enter(node);
@@ -400,7 +404,9 @@ FileTreeMap.prototype = {
 	},
 
 	backHandler: function() {
+		if (this.busy) return;
 		var tm = this.tm;
+		this.setBusy(1200);
 
 		if (this.currentNodeID == '/') return;
 		
