@@ -310,6 +310,7 @@ FileTreeMap.prototype = {
 	},
 
 	updateGraph: function(){
+		var that = this;
 		list = document.querySelectorAll(".temp");
 		for(var i = 0; i < list.length; ++i){
 			list[i].parentNode.removeChild(list[i])
@@ -322,9 +323,10 @@ FileTreeMap.prototype = {
 			if (n.id.substr(0, currentNodeID.length) == currentNodeID){
 				var r = table.insertRow(counter);
 				counter = counter+1;
+				var color = that.color(n.data);
 				r.className = "temp";
 				r.id = "table-"+n.id;
-				r.insertCell(0).innerHTML = '<a href="/" onclick="Observer.fireEvent(\'message\',\''+n.id+'\'); return false;">'+n.id+'</a>';
+				r.insertCell(0).innerHTML = '<a id="table-link-'+n.id+'"class="tree-row" style="background-color: '+color+';" href="/" onclick="Observer.fireEvent(\'search\',\''+n.id+'\'); return false;">'+n.id+'</a>';
 				r.insertCell(1).innerHTML = n.data.fileSize;
 				r.insertCell(2).innerHTML = n.data.nChildren;
 			}
@@ -447,6 +449,16 @@ Observer.addEvent('back', function (node) {
 Observer.addEvent('search', function (node) {
 	if (treemap.searchLock) return;
 	treemap.seek(treemap.tm.graph.getNode(node));
+});
+
+
+//jQuery selectors don't like the slashes in node ids, so we do it this way
+Observer.addEvent('mouseover', function(node) {
+	jQuery(document.getElementById('table-link-'+node.id)).css({'border-color':'red'})
+});
+
+Observer.addEvent('mouseout', function(node) {
+	jQuery(document.getElementById('table-link-'+node.id)).css({'border-color':''})
 });
 
 // Observer.addEvent('treemapupdate', function (node) {
