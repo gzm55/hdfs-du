@@ -225,6 +225,7 @@ public class HdfsDu extends AbstractApplication {
         register("jit/jit.treemap.js", "application/javascript");
         register("chroma/chroma.js", "application/javascript");
         register("range.png", "image/png");
+        register("loading.gif", "image/gif");
       } else {
         Registration.registerServlet(binder(), "/data/flare.json",
             DataFlareJsonAssetHandler.class, false);
@@ -256,6 +257,8 @@ public class HdfsDu extends AbstractApplication {
         Registration.registerServlet(binder(), "/chroma/chroma.js",
             ChromaJsAssetHandler.class, false);
         Registration.registerServlet(binder(), "/range.png",
+            ImageAssetHandler.class, false);
+        Registration.registerServlet(binder(), "/loading.gif",
             ImageAssetHandler.class, false);
       }
     }

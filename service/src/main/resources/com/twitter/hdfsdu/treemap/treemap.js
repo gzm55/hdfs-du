@@ -15,6 +15,10 @@
  */
 
 
+
+ //There's something overriding $ in this file, so uses of jQuery need to specify "jQuery"
+
+
  var publicTM;
 
 (function() {
@@ -121,13 +125,13 @@ function FileTreeMap(chart_id) {
 	  this.bc = $('breadcrumb');
 	  this.currentNodeID = '/';
 
-	  	//broken for reasons unclear to me
-		  var loading_chart=$('#'+chart_id).children().first().clone().prop({id: "treemap-loading"});
-		  loading_chart.hide();
-		  $('#'+chart_id).append(loading_chart);
+	  var loading_chart = jQuery('#'+chart_id).children().first().clone().prop({id: "treemap-loading"}).css({'display':'none'});
+	  jQuery('#'+chart_id).append(loading_chart);
+	  loading_chart.append("<img src='loading.gif' style='width:100%; height:100%'>");
 
 
-		  //TODO: consider adding a refresh button that maybe also clears searchlocks (though not prematurely, we hope...)
+
+		  //TODO: consider adding a refresh button, just in case our searchlocks aren't long enough
 	  $('back').addEventListener('click', function() {
 		  if (tm.clickedNode) Observer.fireEvent('back', tm.clickedNode)
 	  });
@@ -342,20 +346,22 @@ FileTreeMap.prototype = {
 	setSearchLock: function() {
 		this.pendingSearchLock = true;
 		this.searchLock = true;
-		$("#treemap-canvaswidget").hide()
-		$("#treemap-loading").show();
+		jQuery("#treemap-canvaswidget").hide()
+		jQuery("#treemap-loading").show();
 	},
 
 	clearSearchLock: function() {
 		this.searchLock = false;
-		$("#treemap-loading").hide()
-		$("#treemap-canvaswidget").show();
+		jQuery("#treemap-loading").hide()
+		jQuery("#treemap-canvaswidget").show();
+		this.tm.refresh();
 	},
 
 	checkSearchLock: function() {
 		if (!this.pendingSearchLock) return;
 		this.pendingSearchLock = false;
 		var that = this;
+		//Doesn't seem like a value below 1900 reliably works
 		setTimeout(function(){that.clearSearchLock()}, 1700);
 	},
 	
