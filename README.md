@@ -1,3 +1,15 @@
+## Changes from vanilla HDFS-DU
+This repo includes changes from the original HDFS-DU project to better tailor it to suit eBay's needs. The major changes are:
+ - Replaced filetree visualization with table (because it was buggy and scaled poorly)
+ - Implemented search function allowing users to jump to arbitrary nodes by specifying path
+ - Many, many tweaks to the treemap visualization to make it less vulnerable to breaking. 
+
+Plus some minor things like adding command line arguments to specify a title and port. In a perfect world, there are a few more things that could be worked out going forward:
+- Highlighting table nodes should highlight them in the tree map (this is surprisingly difficult)
+- Smoother searching without the loading animation (also surprisingly difficult, because the treemap visualization lacks any kind of support for jumping to arbitrary nodes)
+- Why is the "Up one level" button black? Something's marking it as selected, I believe...
+
+
 # HDFS-DU [![Build Status](https://secure.travis-ci.org/twitter/hdfs-du.png)](http://travis-ci.org/twitter/hdfs-du)
 
 ![hdfsdu UI screenshot](https://github.com/twitter/hdfs-du/raw/master/docs/img/v1.png)
@@ -114,3 +126,4 @@ Here are some high-level goals we'd love to see contributions for:
 Copyright 2012 Twitter, Inc.
 
 Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+

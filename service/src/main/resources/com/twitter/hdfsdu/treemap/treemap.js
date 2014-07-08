@@ -501,13 +501,4 @@ Observer.addEvent('mouseout', function(node) {
 	jQuery(document.getElementById('table-link-'+node.id)).css({'border-color':''})
 });
 
-// Observer.addEvent('treemapupdate', function (node) {
-// 	// TODO: This needs to be on a timeout to work.
-// 	// It's not the greatest solution but it wasn't immediately
-// 	// apparent what was happening asynchronously, so we'll have to
-// 	// come back to this. It looks like 1000 is the smallest value
-// 	// we can get away with here.	
-// 	setTimeout(function(){treemap.seek(node);}, 1000);
-// });
-
 })();
