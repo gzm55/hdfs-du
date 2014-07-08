@@ -480,6 +480,7 @@ Observer.addEvent('initdataloaded', function (text) {
 	json = treemap.processJSON(json);
 	treemap.load(json);
 	treemap.updateGraph();
+	setTimeout(function(){parent.postMessage('hdfs_du loaded', '*');}, 1200);
 });
 
 Observer.addEvent('click', function (node) {

@@ -102,6 +102,6 @@
 	});
 
 	window.addEventListener('message', function(e){
-		Observer.fireEvent('message', e.data);
+		Observer.fireEvent('search', e.data);
 	});
 })();
