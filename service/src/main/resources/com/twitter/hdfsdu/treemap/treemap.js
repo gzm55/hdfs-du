@@ -175,6 +175,10 @@ FileTreeMap.prototype = {
 	  si.val(''); //Set this back to the directory if search fails?
 	  Observer.fireEvent('search', directory);
 	},
+
+	searchError: function(message){
+		jQuery('#search_error').text(message);
+	},
 	
 	color: function(data) {
 		var ratio = (data.fileSize / data.nChildren) / sizeThreshold;
@@ -418,13 +422,14 @@ FileTreeMap.prototype = {
 		if (modifiedLastSearch == this.lastSearch) {
 			si.val(si.data('lastSearch'));
 		}
-		console.log("Node not found:"+this.lastSearch);
+		this.searchError('Could not find directory: '+si.data('lastSearch'));
 
 	},
 	
 	searchHandler: function(node) {
 		if (this.busy) return;
 		var tm = this.tm;
+		this.searchError(''); //Clear any search errors
 		this.setBusy(2700); //searchLock time + 1200
 		this.setSearchLock();
 
@@ -437,6 +442,7 @@ FileTreeMap.prototype = {
 	descendHandler: function(node) {
 		if (this.busy) return;
 		var tm = this.tm;
+		this.searchError(''); //Clear any search errors
 		this.setBusy(1200);
 
 		this.currentNodeID = node.id;
@@ -447,6 +453,7 @@ FileTreeMap.prototype = {
 	backHandler: function() {
 		if (this.busy) return;
 		var tm = this.tm;
+		this.searchError(''); //Clear any search errors
 		this.setBusy(1200);
 
 		if (this.currentNodeID == '/') return;
