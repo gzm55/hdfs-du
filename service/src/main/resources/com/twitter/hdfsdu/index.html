@@ -53,7 +53,7 @@
 	                <button id="back">Up one level</button>
 	            </li>
 	            <li>
-	                <button id="size" class='selected'>File size as area</button>
+	                <button id="size">File size as area</button>
 	            </li>
 	            <li>
 	                <button id="count">File count as area</button>
@@ -63,10 +63,17 @@
     </div>    
     
     <div class="widget right">
-        <div id="filetree"></div>
+        <div id="filetree" style="display:none"></div>
+        <div id="table" style="position:relative; top:60px;">
+          <div style="float:left">
+          <input type="text" id="search_input" placeholder="Absolute path">
+          <button class="tree-btn" id="search_button">Search for directory</button>
+          </div>
+          <br/><br/>
+          <table id="data" style="width:300px">
+        </div>
     </div>
 
-<table id="data" style="width:300px">
 <tr>
   <th>Location</th>
   <th>Filesize</th> 

@@ -129,6 +129,14 @@ function FileTreeMap(chart_id) {
 	  $('back').addEventListener('click', function() {
 		  if (tm.clickedNode) Observer.fireEvent('back', tm.clickedNode)
 	  });
+	  $('search_button').addEventListener('click', function() {
+	  	  treemap.searchButton();
+	  });
+	  $('search_input').addEventListener('keypress', function(event){
+	  	if (event.which == 13 || event.keyCode == 13){
+	  	  treemap.searchButton();
+	  	}
+	  });
 	  size.addEventListener('click', function(e) {
 	  	  if (that.searchLock) return;
 		  size.classList.add('selected');
@@ -154,6 +162,19 @@ FileTreeMap.prototype = {
 		colors: ['#FFF7FB', '#ECE7F2', '#D0D1E6', '#A6BDDB', '#74A9CF', '#3690C0', '#0570B0', '#045A8D', '#023858']
 //		limits: chroma.limits([0, 0.2, 0.4, 0.6, 0.8, 1], 'equal', 5)
 	}),
+
+	searchButton: function(){
+	  if (this.busy || this.searchLock) return;
+  	  var si = jQuery('#search_input');
+  	  var directory = si.val();
+  	  if (directory == '') return; //Otherwise empty searches will take us back to root
+ 	  si.data('lastSearch', directory);
+  	  //We can't really correct bad directories, but we can help with common formatting gotchas
+	  directory = jQuery.trim(directory).replace(/(^\/+)|(\/+$)/g, '');
+	  directory = '/'+directory;
+	  si.val(''); //Set this back to the directory if search fails?
+	  Observer.fireEvent('search', directory);
+	},
 	
 	color: function(data) {
 		var ratio = (data.fileSize / data.nChildren) / sizeThreshold;
@@ -320,7 +341,7 @@ FileTreeMap.prototype = {
 		var currentNodeID = this.currentNodeID;
 		this.tm.graph.eachNode(function(n){
 
-			if (n.id.substr(0, currentNodeID.length) == currentNodeID){
+			if (n.id.substr(0, currentNodeID.length+1) == currentNodeID+'/' || n.id == currentNodeID || currentNodeID == '/'){
 				var r = table.insertRow(counter);
 				counter = counter+1;
 				var color = that.color(n.data);
@@ -368,6 +389,11 @@ FileTreeMap.prototype = {
 	},
 	
 	seek: function(nodeElem) {
+		if(!nodeElem){
+			this.missingNodeHandler();
+			return;
+		}
+
 		var tm = this.tm,
 			node = tm.graph.getNode(nodeElem.id),
 			currentNode = this.getCurrentNode();
@@ -381,6 +407,19 @@ FileTreeMap.prototype = {
 			this.searchHandler(node);
 		}
 		
+	},
+
+	missingNodeHandler: function(){
+		var nodeName = this.lastSearch;
+		var si = jQuery('#search_input');
+		//The lastSearch stored in data is before the cleanup that happens, so we have to modify it slightly and then compare
+		var modifiedLastSearch = jQuery.trim(si.data('lastSearch')).replace(/(^\/+)|(\/+$)/g, '');
+	    modifiedLastSearch = '/'+modifiedLastSearch;
+		if (modifiedLastSearch == this.lastSearch) {
+			si.val(si.data('lastSearch'));
+		}
+		console.log("Node not found:"+this.lastSearch);
+
 	},
 	
 	searchHandler: function(node) {
@@ -448,6 +487,7 @@ Observer.addEvent('back', function (node) {
 
 Observer.addEvent('search', function (node) {
 	if (treemap.searchLock) return;
+	treemap.lastSearch = node;
 	treemap.seek(treemap.tm.graph.getNode(node));
 });
 
