@@ -353,9 +353,24 @@ FileTreeMap.prototype = {
 		var currentNodeID = this.currentNodeID;
 		if (currentNodeID!='/') var re = new RegExp("^"+currentNodeID+'/'+"[^\/]+$");
 		else var re = new RegExp("^"+currentNodeID+"[^\/]+$");
+		var nodeArray = [];
 		this.tm.graph.eachNode(function(n){
 
 			if (n.id.match(re) || n.id == currentNodeID){
+				nodeArray.push(n)
+			}
+
+		});
+		nodeArray.sort(function(a, b){
+			//< and > switched so we get biggest value at top
+			if (a.data.fileSize > b.data.fileSize)
+				return -1;
+			if (a.data.fileSize < b.data.fileSize)
+				return 1;
+			return 0;
+		});
+		for (var i = 0; i < nodeArray.length; i++){
+				var n = nodeArray[i];
 				var r = table.insertRow(counter);
 				counter = counter+1;
 				var color = that.color(n.data);
@@ -364,9 +379,7 @@ FileTreeMap.prototype = {
 				r.insertCell(0).innerHTML = '<a id="table-link-'+n.id+'"class="tree-row" style="background-color: '+color+';" href="/" onclick="Observer.fireEvent(\'search\',\''+n.id+'\'); return false;">'+n.id+'</a>';
 				r.insertCell(1).innerHTML = that.toBytes(n.data.fileSize);
 				r.insertCell(2).innerHTML = n.data.nChildren;
-			}
-
-		});
+		}
 	},
 	
 	parseFileSize: function(size, decimals) {
@@ -392,8 +405,7 @@ FileTreeMap.prototype = {
 		if (!this.pendingSearchLock) return;
 		this.pendingSearchLock = false;
 		var that = this;
-		//Doesn't seem like a value below 1700 reliably works
-		setTimeout(function(){that.clearSearchLock();}, 2000);
+		setTimeout(function(){that.clearSearchLock();}, 1800);
 	},
 
 	setBusy: function(duration){
@@ -440,7 +452,7 @@ FileTreeMap.prototype = {
 		if (this.busy) return;
 		var tm = this.tm;
 		this.searchError(''); //Clear any search errors
-		this.setBusy(3200); //searchLock time + 1200
+		this.setBusy(3000); //searchLock time + 1200
 		this.setSearchLock();
 
 		this.currentNodeID = node.id;
@@ -490,7 +502,9 @@ Observer.addEvent('initdataloaded', function (text) {
 	json = treemap.processJSON(json);
 	treemap.load(json);
 	treemap.updateGraph();
-	setTimeout(function(){parent.postMessage('hdfs_du loaded', '*');}, 1200);
+	setTimeout(function(){
+		parent.postMessage('hdfs_du loaded', '*');
+	}, 1200);
 });
 
 Observer.addEvent('click', function (node) {
