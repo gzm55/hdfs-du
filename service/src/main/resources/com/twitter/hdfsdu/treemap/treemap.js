@@ -27,7 +27,7 @@ var queryLimit = 50000,
 	maxFolders = 70e6,
 	maxSize = 70e8,
 	sizeThreshold = 150 * (1 << 20), //150 M Bytes
-	depth = 2;
+	depth = 1;
 
 var $ = function(d) { return document.getElementById(d); },
 	$$ = function(d) { return document.querySelectorAll(d); };
@@ -188,6 +188,14 @@ FileTreeMap.prototype = {
 			return this.scale.getColor(ratio).hex();
 		}
 	},
+
+	toBytes: function(bytes) {
+	   if(bytes == 0) return '0 Byte';
+	   var k = 1024;
+	   var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+	   var i = Math.floor(Math.log(bytes) / Math.log(k));
+	   return (bytes / Math.pow(k, i)).toPrecision(3) + ' ' + sizes[i];
+	},
 	
 	load: function(json) {
 		this.tm.loadJSON(json);
@@ -343,16 +351,18 @@ FileTreeMap.prototype = {
 		var table = document.getElementById('data');
 		var counter = 1;
 		var currentNodeID = this.currentNodeID;
+		if (currentNodeID!='/') var re = new RegExp("^"+currentNodeID+'/'+"[^\/]+$");
+		else var re = new RegExp("^"+currentNodeID+"[^\/]+$");
 		this.tm.graph.eachNode(function(n){
 
-			if (n.id.substr(0, currentNodeID.length+1) == currentNodeID+'/' || n.id == currentNodeID || currentNodeID == '/'){
+			if (n.id.match(re) || n.id == currentNodeID){
 				var r = table.insertRow(counter);
 				counter = counter+1;
 				var color = that.color(n.data);
 				r.className = "temp";
 				r.id = "table-"+n.id;
 				r.insertCell(0).innerHTML = '<a id="table-link-'+n.id+'"class="tree-row" style="background-color: '+color+';" href="/" onclick="Observer.fireEvent(\'search\',\''+n.id+'\'); return false;">'+n.id+'</a>';
-				r.insertCell(1).innerHTML = n.data.fileSize;
+				r.insertCell(1).innerHTML = that.toBytes(n.data.fileSize);
 				r.insertCell(2).innerHTML = n.data.nChildren;
 			}
 
@@ -383,7 +393,7 @@ FileTreeMap.prototype = {
 		this.pendingSearchLock = false;
 		var that = this;
 		//Doesn't seem like a value below 1700 reliably works
-		setTimeout(function(){that.clearSearchLock();}, 1500);
+		setTimeout(function(){that.clearSearchLock();}, 2000);
 	},
 
 	setBusy: function(duration){
@@ -430,7 +440,7 @@ FileTreeMap.prototype = {
 		if (this.busy) return;
 		var tm = this.tm;
 		this.searchError(''); //Clear any search errors
-		this.setBusy(2700); //searchLock time + 1200
+		this.setBusy(3200); //searchLock time + 1200
 		this.setSearchLock();
 
 		this.currentNodeID = node.id;
