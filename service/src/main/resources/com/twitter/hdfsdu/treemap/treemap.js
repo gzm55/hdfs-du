@@ -92,10 +92,9 @@ function FileTreeMap(chart_id) {
 	    },
 	    
 	    request: function(nodeId, level, callback){
-	    	//This code is called any time we try and get into any node, and multiple times when we get into a node with
-	    	//many children
+	    	//Apparently there are some things I'm not understanding here, but this is not _always_ called. It seems to
+	    	//sometimes not be called when we're running the production script with production data, anyway
 	    	if (level <= depth -1) {
-	    		treemap.checkSearchLock();
 	    		callback.onComplete(nodeId, { children: [] });
 	    		return;
 	    	}
@@ -110,7 +109,6 @@ function FileTreeMap(chart_id) {
 	    			var json = JSON.parse(text);
 	    			json = treemap.processJSON(json);
 	    			json.id = nodeId;
-	    			treemap.checkSearchLock();
 	    			callback.onComplete(nodeId, json);
 	    		}
 	    	}).send();
@@ -120,6 +118,7 @@ function FileTreeMap(chart_id) {
 	  this.tm = tm;
 	  this.bc = $('breadcrumb');
 	  this.currentNodeID = '/';
+	  this.busyDuration = 1200;
 
 	  var loading_chart = jQuery('#'+chart_id).children().first().clone().prop({id: "treemap-loading"}).css({'display':'none'});
 	  jQuery('#'+chart_id).append(loading_chart);
@@ -362,11 +361,10 @@ FileTreeMap.prototype = {
 
 		});
 		nodeArray.sort(function(a, b){
-			//< and > switched so we get biggest value at top
-			if (a.data.fileSize > b.data.fileSize)
-				return -1;
-			if (a.data.fileSize < b.data.fileSize)
-				return 1;
+			var aData = parseInt(a.data.fileSize);
+			var bData = parseInt(b.data.fileSize);
+			if (aData > bData) return -1;
+			if (aData < bData) return 1;
 			return 0;
 		});
 		for (var i = 0; i < nodeArray.length; i++){
@@ -405,7 +403,7 @@ FileTreeMap.prototype = {
 		if (!this.pendingSearchLock) return;
 		this.pendingSearchLock = false;
 		var that = this;
-		setTimeout(function(){that.clearSearchLock();}, 1800);
+		setTimeout(function(){that.clearSearchLock();}, 2000);
 	},
 
 	setBusy: function(duration){
@@ -452,8 +450,13 @@ FileTreeMap.prototype = {
 		if (this.busy) return;
 		var tm = this.tm;
 		this.searchError(''); //Clear any search errors
-		this.setBusy(3000); //searchLock time + 1200
+		this.setBusy(this.busyDuration+2500); //2500 = searchLock time + 500 more as below
 		this.setSearchLock();
+		//This is much much less elegant than checking the searchlock when we retrieve data, but
+		//we apparently don't always retrieve data, so this is the easiest best option
+		setTimeout(function(){
+			treemap.checkSearchLock();
+		}, 500)
 
 		this.currentNodeID = node.id;
 		tm.enter(node);
@@ -465,7 +468,7 @@ FileTreeMap.prototype = {
 		if (this.busy) return;
 		var tm = this.tm;
 		this.searchError(''); //Clear any search errors
-		this.setBusy(1200);
+		this.setBusy(this.busyDuration);
 
 		this.currentNodeID = node.id;
     	tm.enter(node);
@@ -476,7 +479,7 @@ FileTreeMap.prototype = {
 		if (this.busy) return;
 		var tm = this.tm;
 		this.searchError(''); //Clear any search errors
-		this.setBusy(1200);
+		this.setBusy(this.busyDuration);
 
 		if (this.currentNodeID == '/') return;
 		
