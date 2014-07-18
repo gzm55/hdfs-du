@@ -109,6 +109,7 @@ function FileTreeMap(chart_id) {
 	    			var json = JSON.parse(text);
 	    			json = treemap.processJSON(json);
 	    			json.id = nodeId;
+	    			treemap.graphChildren(json);
 	    			callback.onComplete(nodeId, json);
 	    		}
 	    	}).send();
@@ -341,7 +342,7 @@ FileTreeMap.prototype = {
 		this.updateGraph();
 	},
 
-	updateGraph: function(){
+	updateGraph: function(nodes){
 		var that = this;
 		list = document.querySelectorAll(".temp");
 		for(var i = 0; i < list.length; ++i){
@@ -350,16 +351,27 @@ FileTreeMap.prototype = {
 		var table = document.getElementById('data');
 		var counter = 1;
 		var currentNodeID = this.currentNodeID;
+		jQuery('#table_breadcrumb').text(currentNodeID);
 		if (currentNodeID!='/') var re = new RegExp("^"+currentNodeID+'/'+"[^\/]+$");
 		else var re = new RegExp("^"+currentNodeID+"[^\/]+$");
 		var nodeArray = [];
-		this.tm.graph.eachNode(function(n){
+		if (!nodes){
+			this.tm.graph.eachNode(function(n){
 
-			if (n.id.match(re) || n.id == currentNodeID){
-				nodeArray.push(n)
+				if (n.id.match(re) || n.id == currentNodeID){
+					nodeArray.push(n)
+				}
+
+			});
+		} else {
+			for (var i = 0; i < nodes.length; i++){
+				var n = nodes[i];
+				if (n.id.match(re) || n.id == currentNodeID){
+					nodeArray.push(n)
+				}
+
 			}
-
-		});
+		}
 		nodeArray.sort(function(a, b){
 			var aData = parseInt(a.data.fileSize);
 			var bData = parseInt(b.data.fileSize);
@@ -374,10 +386,30 @@ FileTreeMap.prototype = {
 				var color = that.color(n.data);
 				r.className = "temp";
 				r.id = "table-"+n.id;
-				r.insertCell(0).innerHTML = '<a id="table-link-'+n.id+'"class="tree-row" style="background-color: '+color+';" href="/" onclick="Observer.fireEvent(\'search\',\''+n.id+'\'); return false;">'+n.id+'</a>';
-				r.insertCell(1).innerHTML = that.toBytes(n.data.fileSize);
-				r.insertCell(2).innerHTML = n.data.nChildren;
+				if (n.id==that.currentNodeID) name = "("+n.id+")";
+				else name = n.id.substring(that.currentNodeID.length);
+				r.insertCell(0).innerHTML = '<div class="tree-square" style="background-color: '+color+';"></div>'
+				r.insertCell(1).innerHTML = '<a id="table-link-'+n.id+'"class="tree-row" href="/" onclick="Observer.fireEvent(\'search\',\''+n.id+'\'); return false;">'+name+'</a>';
+				r.insertCell(2).innerHTML = that.toBytes(n.data.fileSize);
+				r.insertCell(3).innerHTML = n.data.nChildren;
+				r.insertCell(4).innerHTML = that.toBytes(n.data.fileSize / n.data.nChildren); //Average file size
 		}
+	},
+
+	graphChildren: function(node){
+		//The important case is the one where the current node is the fetched node,
+		//because this means that we're fetching a new node and the graph should be
+		//it plus its children.
+		var that = this;
+		if(this.currentNodeID!=node.id) return;
+		var nodes = [];
+		setTimeout(function(n){
+		for (var i = 0; i < node.children.length; i++){
+			var n = that.tm.graph.getNode(node.children[i].id);
+			nodes.push(n);
+		}
+		nodes.push(node);
+		that.updateGraph(nodes)}, this.busyDuration/2);
 	},
 	
 	parseFileSize: function(size, decimals) {
@@ -527,13 +559,13 @@ Observer.addEvent('search', function (node) {
 });
 
 
-//jQuery selectors don't like the slashes in node ids, so we do it this way
-Observer.addEvent('mouseover', function(node) {
-	jQuery(document.getElementById('table-link-'+node.id)).css({'border-color':'red'})
-});
+// //jQuery selectors don't like the slashes in node ids, so we do it this way
+// Observer.addEvent('mouseover', function(node) {
+// 	jQuery(document.getElementById('table-link-'+node.id)).css({'border-color':'red'})
+// });
 
-Observer.addEvent('mouseout', function(node) {
-	jQuery(document.getElementById('table-link-'+node.id)).css({'border-color':''})
-});
+// Observer.addEvent('mouseout', function(node) {
+// 	jQuery(document.getElementById('table-link-'+node.id)).css({'border-color':''})
+// });
 
 })();

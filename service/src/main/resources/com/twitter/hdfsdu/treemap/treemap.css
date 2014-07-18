@@ -179,7 +179,7 @@ button#back, .tree-btn#back {
 }
 
 
-.tree-row:link, .tree-row:visited {
+/*.tree-row:link, .tree-row:visited {
     display: block;
     color: white;
     width: 120px;
@@ -193,5 +193,14 @@ button#back, .tree-btn#back {
 
 .tree-row:hover, .tree-row:active {
     border-color: red;
+}*/
+
+.tree-row:link, .tree-row:visited {
+    color: black;
 }
 
+.tree-square {
+  width: 25px;
+  height: 25px;
+  margin: 0 auto;
+}
