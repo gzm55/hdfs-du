@@ -77,17 +77,17 @@ public class SizeByPathServlet extends TextResponseHandler {
 		statement = HdfsDu.conn.prepareStatement("select * from size_by_path "
 				+ "where (path like ?) and path_depth <= ? "
 				+ "order by path limit ?");
-		statement.setString(parameterIndex++, paramPath + "%");
-		statement.setInt(parameterIndex++, paramDepth);
-		statement.setInt(parameterIndex++, paramLimit);
+		statement.setString(parameterIndex++, path + "%");
+		statement.setInt(parameterIndex++, depth);
+		statement.setInt(parameterIndex++, limit);
         } else {
 		statement = HdfsDu.conn.prepareStatement("select * from size_by_path "
 				+ "where (path like ? or path = ?) and path_depth <= ? "
 				+ "order by path limit ?");
-		statement.setString(parameterIndex++, paramPath + "/%");
-		statement.setString(parameterIndex++, paramPath);
-		statement.setInt(parameterIndex++, paramDepth);
-		statement.setInt(parameterIndex++, paramLimit);
+		statement.setString(parameterIndex++, path + "/%");
+		statement.setString(parameterIndex++, path);
+		statement.setInt(parameterIndex++, depth);
+		statement.setInt(parameterIndex++, limit);
         }
 	LOG.info("Running query: " + statement);
 
