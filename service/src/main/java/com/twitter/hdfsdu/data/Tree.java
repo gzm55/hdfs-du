@@ -42,6 +42,7 @@ public class Tree<T extends NodeData> {
 			this.children = new ArrayList<Node>();
 		}
 		
+		@SuppressWarnings("unchecked")
 		public JSONObject toJSON() {
 			JSONObject jsonObject = new JSONObject();
 			jsonObject.put("id", this.id);
@@ -107,12 +108,13 @@ public class Tree<T extends NodeData> {
 				return;
 			}
 		}
-		
+
+		@SuppressWarnings("unchecked")
 		Node newNode = new Node(node.id + (node.id.equals("/") ? "": "/") + pathCmp, pathCmp, pathCmp, (T) data);
 		nodes.add(newNode);
 		return;
 	}
-	
+
 	public void prune(int depth) {
 		pruneHelper(root, depth);
 	}
