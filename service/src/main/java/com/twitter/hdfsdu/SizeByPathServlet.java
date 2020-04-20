@@ -58,21 +58,34 @@ public class SizeByPathServlet extends TextResponseHandler {
 		Integer paramLimit = request.getParameter("limit") == null ? 100
 				: Integer.parseInt(request.getParameter("limit"));
 
-		Statement statement = HdfsDu.conn.createStatement();
-		String query;
-		if (paramPath.equals("/")) {
-			query = "select * from size_by_path "
-					+ "where (path like '" + paramPath + "%') and path_depth <= "
-					+ paramDepth + " order by path limit " + paramLimit;
-		} else {
-			query = "select * from size_by_path "
-					+ "where (path like '" + paramPath + "/%' or path = '" + paramPath + "') and path_depth <= "
-					+ paramDepth + " order by path limit " + paramLimit;
-		}
-		LOG.info("Running query: " + query);
 
-		return statement.executeQuery(query);
+        long start = System.nanoTime();
+        ResultSet sizeByPathResultSet = doSizeByPathQuery(paramPath, paramDepth, paramLimit);
+        long end = System.nanoTime();
+
+        long query_elapsed_msec = (end - start)/1000000;
+        LOG.info("Query time: " + query_elapsed_msec + " ms.");
+
+        return sizeByPathResultSet;
 	}
+
+    private ResultSet doSizeByPathQuery(String path, Integer depth, Integer limit) throws SQLException {
+        Statement statement = HdfsDu.conn.createStatement();
+        String query;
+        if (path.equals("/")) {
+            query = "select * from size_by_path "
+                    + "where (path like '" + path + "%') and path_depth <= "
+                    + depth + " order by path limit " + limit;
+        } else {
+            query = "select * from size_by_path "
+                    + "where (path like '" + path + "/%' or path = '" + path + "') and path_depth <= "
+                    + depth + " order by path limit " + limit;
+        }
+        LOG.info("Running query: " + query);
+
+        return statement.executeQuery(query);
+    }
+
 
 	@Override
 	public Iterable<String> getLines(HttpServletRequest request) {
@@ -86,11 +99,12 @@ public class SizeByPathServlet extends TextResponseHandler {
 			while (resultSet.next()) {
 				Map<String, String> entry = Maps.newHashMap();
 				entry.put("path", resultSet.getString("path"));
-        entry.put("bytes", resultSet.getString("size_in_bytes"));
-        entry.put("count", resultSet.getString("file_count"));
-        entry.put("leaf", resultSet.getString("leaf"));
+                entry.put("bytes", resultSet.getString("size_in_bytes"));
+                entry.put("count", resultSet.getString("file_count"));
+                entry.put("leaf", resultSet.getString("leaf"));
 				results.add(entry);
 			}
+            LOG.info("Query returned " + results.size() + " results.");
 
 			StringWriter stringWriter = new StringWriter();
 			mapper.writeValue(stringWriter, results);

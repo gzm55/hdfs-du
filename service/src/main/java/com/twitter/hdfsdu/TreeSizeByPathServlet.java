@@ -19,6 +19,7 @@ package com.twitter.hdfsdu;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -29,6 +30,8 @@ import com.twitter.hdfsdu.data.DataTransformer;
 import com.twitter.hdfsdu.data.NodeData;
 
 public class TreeSizeByPathServlet extends SizeByPathServlet {
+    private static final Logger LOG = Logger.getLogger(TreeSizeByPathServlet.class.getName());
+
 	@Override
 	public Iterable<String> getLines(HttpServletRequest request) {
 		String paramPath = request.getParameter("path");
@@ -45,12 +48,14 @@ public class TreeSizeByPathServlet extends SizeByPathServlet {
 			NodeData data;
 			while (resultSet.next()) {
 				data = new NodeData();
-        data.fileSize = resultSet.getString("size_in_bytes");
-        data.nChildren = resultSet.getLong("file_count");
-        data.path = resultSet.getString("path");
-        data.leaf = resultSet.getBoolean("leaf");
+                data.fileSize = resultSet.getString("size_in_bytes");
+                data.nChildren = resultSet.getLong("file_count");
+                data.path = resultSet.getString("path");
+                data.leaf = resultSet.getBoolean("leaf");
 				elems.add(data);
 			}
+            LOG.info("Query returned " + elems.size() + " results.");
+
 			JSONObject jsonObject = DataTransformer.getJSONTree(paramPath, paramDepth, elems);
 			
 			String ans = null;
