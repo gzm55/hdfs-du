@@ -15,5 +15,5 @@ java -Xms2048m -Xmx2048m -cp 'lib/*' \
     -title="$1" \
     -use_glog \
     -use_glog_formatter \
-    -log_dir logs \
+    -log_dir=logs \
     -input_path=../../src/main/resources/com/twitter/hdfsdu/data/example.txt

@@ -86,7 +86,7 @@ function FileTreeMap(chart_id) {
 				var data = node.data;
 				html += "<b>folder size:</b> " + Math.round(data.fileSize / (1 << 20)) + " MB</li><li>";
 				html += "<b>n. of descendants:</b> " + data.nChildren + "</li><li>";
-				html += "<b>avg. file size:</b> " + Math.round((data.fileSize / data.nChildren) / (1 << 20)) + " MB</li></ul></div>";
+				html += "<b>avg. file size:</b> " + Math.round((data.nChildren <= 0 ? 0 : data.fileSize / data.nChildren) / (1 << 20)) + " MB</li></ul></div>";
 				tip.innerHTML = html;
 	      }  
 	    },
@@ -181,7 +181,7 @@ FileTreeMap.prototype = {
 	},
 	
 	color: function(data) {
-		var ratio = (data.fileSize / data.nChildren) / sizeThreshold;
+		var ratio = (data.nChildren <= 0 ? 0 : data.fileSize / data.nChildren) / sizeThreshold;
 		if (ratio > 1) {
 			return this.scale.getColor(1).hex();
 		} else {
@@ -392,7 +392,7 @@ FileTreeMap.prototype = {
 				r.insertCell(1).innerHTML = '<a id="table-link-'+n.id+'"class="tree-row" href="/" onclick="Observer.fireEvent(\'search\',\''+n.id+'\'); return false;">'+name+'</a>';
 				r.insertCell(2).innerHTML = that.toBytes(n.data.fileSize);
 				r.insertCell(3).innerHTML = n.data.nChildren;
-				r.insertCell(4).innerHTML = that.toBytes(n.data.fileSize / n.data.nChildren); //Average file size
+				r.insertCell(4).innerHTML = that.toBytes(n.data.nChildren <= 0 ? 0 : n.data.fileSize / n.data.nChildren); //Average file size
 		}
 	},
 
