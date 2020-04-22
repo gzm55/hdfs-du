@@ -141,6 +141,10 @@ public class HdfsDu extends AbstractApplication {
         if (line == null) {
           break;
         }
+	if (line.length() < 1 || '/' != line.charAt(0)) {
+		// all paths should begin with '/', skip invalid paths
+		continue;
+	}
         String[] parts = line.split("\t");
         s.clearParameters();
         s.setString(1, parts[0]);

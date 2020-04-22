@@ -522,14 +522,14 @@ FileTreeMap.prototype = {
 			if (!parentId) {
 				parentId = '/'
 			}
-			var level = this.currentNodeID.split('/').length;
+			var currDepth = this.currentNodeID.split('/').length;
 			this.currentNodeID = parentId;
 			new XHR({
 				url: '/tree_size_by_path',
 				params: {
 					path: parentId,
-					limit: queryLimit / level,
-					depth: level
+					limit: 50000,
+					depth: currDepth
 				},
 				onSuccess: function(text) {
 					var json = JSON.parse(text);

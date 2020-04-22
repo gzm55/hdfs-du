@@ -1,12 +1,12 @@
-/* 
+/*
  * Copyright 2012 Twitter, Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -58,42 +58,42 @@ public class SizeByPathServlet extends TextResponseHandler {
 		Integer paramLimit = request.getParameter("limit") == null ? 100
 				: Integer.parseInt(request.getParameter("limit"));
 
+		long start = System.nanoTime();
+		ResultSet sizeByPathResultSet = doSizeByPathQuery(paramPath, paramDepth, paramLimit);
+		long end = System.nanoTime();
 
-        long start = System.nanoTime();
-        ResultSet sizeByPathResultSet = doSizeByPathQuery(paramPath, paramDepth, paramLimit);
-        long end = System.nanoTime();
+		long query_elapsed_msec = (end - start)/1000000;
+		LOG.info("Query time: " + query_elapsed_msec + " ms.");
 
-        long query_elapsed_msec = (end - start)/1000000;
-        LOG.info("Query time: " + query_elapsed_msec + " ms.");
-
-        return sizeByPathResultSet;
+		return sizeByPathResultSet;
 	}
 
-    private ResultSet doSizeByPathQuery(String path, Integer depth, Integer limit) throws SQLException {
-	PreparedStatement statement;
-	int parameterIndex = 1;
+	private ResultSet doSizeByPathQuery(String path, Integer depth, Integer limit) throws SQLException {
+		PreparedStatement statement;
+		int parameterIndex = 1;
 
-        if (path.equals("/")) {
-		statement = HdfsDu.conn.prepareStatement("select * from size_by_path "
-				+ "where (path like ?) and path_depth <= ? "
-				+ "order by path limit ?");
-		statement.setString(parameterIndex++, path + "%");
-		statement.setInt(parameterIndex++, depth);
+		if (path.equals("/")) {
+			statement = HdfsDu.conn.prepareStatement("select * from size_by_path "
+					+ "where path_depth <= ? "
+					+ "order by path_depth limit ?");
+			statement.setInt(parameterIndex++, depth);
+		} else {
+			int minDepth = path.split("/").length - 1;
+			statement = HdfsDu.conn.prepareStatement("select * from size_by_path "
+					+ "where ? <= path_depth and path_depth <= ? and CHAR_LENGTH(path) >= ? and (path like ? or path = ?) "
+					+ "order by path_depth limit ?");
+			statement.setInt(parameterIndex++, minDepth < 0 ? 0 : minDepth);
+			statement.setInt(parameterIndex++, depth);
+			statement.setInt(parameterIndex++, path.length());
+			statement.setString(parameterIndex++, path + "/%");
+			statement.setString(parameterIndex++, path);
+		}
 		statement.setInt(parameterIndex++, limit);
-        } else {
-		statement = HdfsDu.conn.prepareStatement("select * from size_by_path "
-				+ "where (path like ? or path = ?) and path_depth <= ? "
-				+ "order by path limit ?");
-		statement.setString(parameterIndex++, path + "/%");
-		statement.setString(parameterIndex++, path);
-		statement.setInt(parameterIndex++, depth);
-		statement.setInt(parameterIndex++, limit);
-        }
-	LOG.info("Running query: " + statement);
 
-	return statement.executeQuery();
-    }
+		LOG.info("Running query: " + statement);
 
+		return statement.executeQuery();
+	}
 
 	@Override
 	public Iterable<String> getLines(HttpServletRequest request) {
