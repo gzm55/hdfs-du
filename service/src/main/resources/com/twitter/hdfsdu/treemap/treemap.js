@@ -1,12 +1,12 @@
-/* 
+/*
  * Copyright 2012 Twitter, Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,8 +32,8 @@ var queryLimit = 50000,
 var $ = function(d) { return document.getElementById(d); },
 	$$ = function(d) { return document.querySelectorAll(d); };
 
-function FileTreeMap(chart_id) {
-	var that = this, 
+function FileTreeMap(chart_id, current_path) {
+	var that = this,
 		size = $('size'),
 		count = $('count'),
 //		tm = new $jit.TM.Voronoi({
@@ -88,9 +88,9 @@ function FileTreeMap(chart_id) {
 				html += "<b>n. of descendants:</b> " + data.nChildren + "</li><li>";
 				html += "<b>avg. file size:</b> " + Math.round((data.nChildren <= 0 ? 0 : data.fileSize / data.nChildren) / (1 << 20)) + " MB</li></ul></div>";
 				tip.innerHTML = html;
-	      }  
+	      }
 	    },
-	    
+
 	    request: function(nodeId, level, callback){
 	    	//Apparently there are some things I'm not understanding here, but this is not _always_ called. It seems to
 	    	//sometimes not be called when we're running the production script with production data, anyway
@@ -113,12 +113,12 @@ function FileTreeMap(chart_id) {
 	    			callback.onComplete(nodeId, json);
 	    		}
 	    	}).send();
-	    }	    
+	    }
 	  });
-	
+
 	  this.tm = tm;
 	  this.bc = $('breadcrumb');
-	  this.currentNodeID = '/';
+	  this.currentNodeID = current_path;
 	  this.busyDuration = 1200;
 
 	  var loading_chart = jQuery('#'+chart_id).children().first().clone().prop({id: "treemap-loading"}).css({'display':'none'});
@@ -128,6 +128,7 @@ function FileTreeMap(chart_id) {
 
 	  $('back').addEventListener('click', function() {
 		  if (tm.clickedNode) Observer.fireEvent('back', tm.clickedNode)
+		  else Observer.fireEvent('back', treemap.getCurrentNode())
 	  });
 	  $('search_button').addEventListener('click', function() {
 	  	  treemap.searchButton();
@@ -153,7 +154,7 @@ function FileTreeMap(chart_id) {
 
 FileTreeMap.prototype = {
 	size: true,
-	
+
 	scale: new chroma.ColorScale({
 //	    colors: ['#6A000B', '#F7E1C5']
 //		colors: ['#A50026', '#D73027', '#F46D43', '#FDAE61', '#FEE090', '#FFFFBF', '#E0F3F8', '#ABD9E9', '#74ADD1', '#4575B4', '#313695']
@@ -179,7 +180,7 @@ FileTreeMap.prototype = {
 	searchError: function(message){
 		jQuery('#search_error').text(message);
 	},
-	
+
 	color: function(data) {
 		var ratio = (data.nChildren <= 0 ? 0 : data.fileSize / data.nChildren) / sizeThreshold;
 		if (ratio > 1) {
@@ -196,7 +197,7 @@ FileTreeMap.prototype = {
 	   var i = Math.floor(Math.log(bytes) / Math.log(k));
 	   return (bytes / Math.pow(k, i)).toPrecision(3) + ' ' + sizes[i];
 	},
-	
+
 	load: function(json) {
 		this.tm.loadJSON(json);
 		this.tm.refresh();
@@ -205,12 +206,12 @@ FileTreeMap.prototype = {
 	getCurrentNode: function() {
 		return this.tm.graph.getNode(this.currentNodeID);
 	},
-	
+
 	processJSON: function(json) {
 		if (!json.id) {
 			return json;
 		}
-		
+
 		var fileSize = json.data.fileSize,
 			min = Math.min,
 			len = fileSize.length,
@@ -218,7 +219,7 @@ FileTreeMap.prototype = {
 			decimals = 6,
 			that = this,
 			count = 0, div;
-			
+
 		div = 350 / (this.size ? maxFolders : maxSize);
 
 		$jit.json.each(json, function(n) {
@@ -236,7 +237,7 @@ FileTreeMap.prototype = {
 		});
 		return json;
 	},
-	
+
 	setVoronoi: function() {
 		var tm = this.tm,
 			util = $jit.util;
@@ -248,13 +249,13 @@ FileTreeMap.prototype = {
 		tm.refresh();
 		tm.config.animate = true;
 	},
-	
+
 	setSquarified: function() {
 		var tm = this.tm,
 			util = $jit.util,
 			$C = $jit.Complex,
 			dist2 = $jit.geometry.dist2;
-		
+
 		util.extend(tm, new $jit.Layouts.TM.Squarified());
 		tm.config.Node.type = 'rectangle';
 		tm.config.Label.textBaseline = 'top';
@@ -263,21 +264,21 @@ FileTreeMap.prototype = {
 		tm.refresh();
 		tm.config.animate = true;
 	},
-	
+
 	setSize: function() {
 		if (this.size || this.busy) return;
 		this.size = this.busy = true;
-		
+
 		var that = this,
 			util = $jit.util,
 			min = Math.min,
 			tm = this.tm,
 			g = tm.graph;
-		
+
 		g.eachNode(function(n) {
 			n.setData('area', +that.parseFileSize(n.data.fileSize, 6), 'end');
 		})
-		
+
 		tm.compute('end');
 		tm.fx.animate({
 			modes: {
@@ -294,22 +295,22 @@ FileTreeMap.prototype = {
 			}
 		});
 	},
-	
+
 	setCount: function() {
 		if (!this.size || this.busy) return;
 		this.size = false;
 		this.busy = true;
-		
+
 		var that = this,
 			util = $jit.util,
 			min = Math.min,
 			tm = this.tm,
 			g = tm.graph;
-		
+
 		g.eachNode(function(n) {
 			n.setData('area', +n.data.nChildren, 'end');
 		})
-		
+
 		tm.compute('end');
 		tm.fx.animate({
 			modes: {
@@ -326,18 +327,13 @@ FileTreeMap.prototype = {
 			}
 		});
 	},
-	
-	updateHTML: function(node) {
-		if (!node) return;
 
-		var names = [node.name],
-			parents = node.getParents();
-		
-		while (parents.length) {
-			names.unshift(parents[0].name);
-			parents = parents[0].getParents();
+	updateHTML: function(node_id) {
+		if (!node_id || '/' == node_id) {
+			this.bc.innerHTML = '/';
+		} else {
+			this.bc.innerHTML = '/' + node_id.replace('/', ' &rsaquo; ');
 		}
-		this.bc.innerHTML = names.join(' &rsaquo; ');
 
 		this.updateGraph();
 	},
@@ -411,7 +407,7 @@ FileTreeMap.prototype = {
 		nodes.push(node);
 		that.updateGraph(nodes)}, this.busyDuration/2);
 	},
-	
+
 	parseFileSize: function(size, decimals) {
 		var len = size.length;
 		return size.slice(0, len - decimals) + '.' + size.slice(len-decimals);
@@ -443,7 +439,7 @@ FileTreeMap.prototype = {
 		var that = this;
 		setTimeout(function(){that.busy = false;}, duration);
 	},
-	
+
 	seek: function(nodeElem) {
 		if(!nodeElem){
 			this.missingNodeHandler();
@@ -462,7 +458,7 @@ FileTreeMap.prototype = {
 		} else if (node.id != currentNode.id){
 			this.searchHandler(node);
 		}
-		
+
 	},
 
 	missingNodeHandler: function(){
@@ -477,7 +473,7 @@ FileTreeMap.prototype = {
 		this.searchError('Could not find directory: '+si.data('lastSearch'));
 
 	},
-	
+
 	searchHandler: function(node) {
 		if (this.busy) return;
 		var tm = this.tm;
@@ -492,7 +488,7 @@ FileTreeMap.prototype = {
 
 		this.currentNodeID = node.id;
 		tm.enter(node);
-		this.updateHTML(node);
+		this.updateHTML(this.currentNodeID);
 	},
 
 
@@ -503,23 +499,45 @@ FileTreeMap.prototype = {
 		this.setBusy(this.busyDuration);
 
 		this.currentNodeID = node.id;
-    	tm.enter(node);
-    	this.updateHTML(node);
+		tm.enter(node);
+		this.updateHTML(this.currentNodeID);
 	},
 
 	backHandler: function() {
 		if (this.busy) return;
 		var tm = this.tm;
 		this.searchError(''); //Clear any search errors
-		this.setBusy(this.busyDuration);
 
 		if (this.currentNodeID == '/') return;
-		
+
+		this.setBusy(this.busyDuration);
+
 		var parent = this.getCurrentNode().getParents()[0];
 		if (parent) {
-	        tm.out();
-	        this.currentNodeID = parent.id;
-	    	this.updateHTML(parent);
+			tm.out();
+			this.currentNodeID = parent.id;
+			this.updateHTML(this.currentNodeID);
+		} else {
+			var parentId = this.currentNodeID.replace(/\/[^/]*$/g, '');
+			if (!parentId) {
+				parentId = '/'
+			}
+			var level = this.currentNodeID.split('/').length;
+			this.currentNodeID = parentId;
+			new XHR({
+				url: '/tree_size_by_path',
+				params: {
+					path: parentId,
+					limit: queryLimit / level,
+					depth: level
+				},
+				onSuccess: function(text) {
+					var json = JSON.parse(text);
+					json = treemap.processJSON(json);
+					treemap.load(json);
+					treemap.updateHTML(treemap.currentNodeID);
+				}
+			}).send();
 		}
 	}
 };
@@ -527,8 +545,8 @@ FileTreeMap.prototype = {
 var treemap;
 
 
-Observer.addEvent('load', function() {
-	treemap = new FileTreeMap('treemap');
+Observer.addEvent('load', function(current_path) {
+	treemap = new FileTreeMap('treemap', current_path);
 	publicTM = treemap;
 });
 
@@ -536,7 +554,7 @@ Observer.addEvent('initdataloaded', function (text) {
 	var json = JSON.parse(text);
 	json = treemap.processJSON(json);
 	treemap.load(json);
-	treemap.updateGraph();
+	treemap.updateHTML(treemap.currentNodeID);
 	setTimeout(function(){
 		parent.postMessage('hdfs_du loaded', '*');
 	}, 1200);

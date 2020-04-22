@@ -1,12 +1,12 @@
-/* 
+/*
  * Copyright 2012 Twitter, Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,7 +19,7 @@
 		limit: 50000,
 		depth: 2
 	};
-	
+
 	var Observer = {
 		callbacks: {},
 		addEvent: function(type, fn) {
@@ -29,7 +29,7 @@
 			}
 			callbacks[type].push(fn);
 		},
-		
+
 		fireEvent: function(type, e) {
 			var callbacks = this.callbacks[type];
 			if (!callbacks) return;
@@ -38,31 +38,31 @@
 			});
 		}
 	};
-	
+
 	var XHR = function(opt) {
 		var xhr = new XMLHttpRequest(),
 			qs = opt.params || {},
 			url = opt.url;
-			
+
 		var k = Object.keys(qs),
 			queryString = [];
 		k.forEach(function(key) {
 			queryString.push(key + '=' + encodeURIComponent(qs[key]));
 		});
-		
+
 		if (queryString.length) {
 			queryString = queryString.join('&');
 			queryString = '?' + queryString;
 			url += queryString;
 		}
-		
+
 		xhr.open('GET', url, true);
 		xhr.onreadystatechange = function(e) {
 			if (xhr.readyState == 4) {
 				opt.onSuccess && opt.onSuccess(xhr.responseText);
 			}
 		};
-		
+
 		this.xhr = xhr;
 	};
 
@@ -73,13 +73,21 @@
 	};
 	window.Observer = Observer;
 	window.XHR = XHR;
-	
+
 	window.addEventListener('DOMContentLoaded', function(e) {
-		Observer.fireEvent('load', e);
+		var path = '/';
+		var queryStr = e.target.location.search;
+		if (queryStr) {
+			path = new URLSearchParams(queryStr).get('path');
+			if (!path) {
+				path = '/';
+			}
+		}
+		Observer.fireEvent('load', path);
 
 		new XHR({
 			url: '/misc',
-			params: {}, 
+			params: {},
 			onSuccess: function(text) {
 				res = JSON.parse(text)
 				$("#title").text(res['title'])
@@ -87,18 +95,18 @@
 				//from the application would go here
 			}
 		}).send();
-		
+
 		new XHR({
 			url: '/tree_size_by_path',
 			params: {
-				path: '/',
+				path: path,
 				limit: QueryConfig.limit,
 				depth: QueryConfig.depth
 			},
 			onSuccess: function(text) {
 				Observer.fireEvent('initdataloaded', text);
 			}
-		}).send();	
+		}).send();
 	});
 
 	window.addEventListener('message', function(e){
