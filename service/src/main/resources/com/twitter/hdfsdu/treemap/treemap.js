@@ -119,6 +119,7 @@ function FileTreeMap(chart_id, current_path) {
 	  this.tm = tm;
 	  this.bc = $('breadcrumb');
 	  this.currentNodeID = current_path;
+	  this.updateHash = false;
 	  this.busyDuration = 1200;
 
 	  var loading_chart = jQuery('#'+chart_id).children().first().clone().prop({id: "treemap-loading"}).css({'display':'none'});
@@ -328,11 +329,22 @@ FileTreeMap.prototype = {
 		});
 	},
 
+	updateWindowHash: function() {
+		var currHash = window.location.hash.substring(1);
+		var currPath = this.currentNodeID;
+		if (currHash == currPath || (currHash == '' && currPath == '/')) {
+			return;
+		}
+
+		this.updateHash = true;
+		window.location.hash = currPath;;
+	},
+
 	updateHTML: function(node_id) {
 		if (!node_id || '/' == node_id) {
 			this.bc.innerHTML = '/';
 		} else {
-			this.bc.innerHTML = '/' + node_id.replace('/', ' &rsaquo; ');
+			this.bc.innerHTML = '/' + node_id.replace(/\//g, ' &rsaquo; ');
 		}
 
 		this.updateGraph();
@@ -487,6 +499,7 @@ FileTreeMap.prototype = {
 		}, 500)
 
 		this.currentNodeID = node.id;
+		this.updateWindowHash();
 		tm.enter(node);
 		this.updateHTML(this.currentNodeID);
 	},
@@ -499,6 +512,7 @@ FileTreeMap.prototype = {
 		this.setBusy(this.busyDuration);
 
 		this.currentNodeID = node.id;
+		this.updateWindowHash();
 		tm.enter(node);
 		this.updateHTML(this.currentNodeID);
 	},
@@ -516,6 +530,7 @@ FileTreeMap.prototype = {
 		if (parent) {
 			tm.out();
 			this.currentNodeID = parent.id;
+			this.updateWindowHash();
 			this.updateHTML(this.currentNodeID);
 		} else {
 			var parentId = this.currentNodeID.replace(/\/[^/]*$/g, '');
@@ -524,6 +539,7 @@ FileTreeMap.prototype = {
 			}
 			var currDepth = this.currentNodeID.split('/').length;
 			this.currentNodeID = parentId;
+			this.updateWindowHash();
 			new XHR({
 				url: '/tree_size_by_path',
 				params: {
@@ -574,6 +590,40 @@ Observer.addEvent('search', function (node) {
 	if (treemap.searchLock) return;
 	treemap.lastSearch = node;
 	treemap.seek(treemap.tm.graph.getNode(node));
+});
+
+Observer.addEvent('hashchange', function (node) {
+	if (treemap.updateHash) {
+		treemap.updateHash = false;
+		return;
+	}
+	if (treemap.searchLock) return;
+	if (node.charAt(0) != "/") {
+		treemap.missingNodeHandler();
+		return;
+	}
+	var treeNode = treemap.tm.graph.getNode(node);
+	if (treeNode) {
+		treemap.seek(treeNode);
+		treemap.updateHash = false;
+	} else {
+		var depth = node.split('/').length;
+		treemap.currentNodeID = node;
+		new XHR({
+			url: '/tree_size_by_path',
+			params: {
+				path: node,
+				limit: 50000,
+				depth: depth + 1
+			},
+			onSuccess: function(text) {
+				var json = JSON.parse(text);
+				json = treemap.processJSON(json);
+				treemap.load(json);
+				treemap.updateHTML(treemap.currentNodeID);
+			}
+		}).send();
+	}
 });
 
 

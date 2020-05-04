@@ -75,13 +75,9 @@
 	window.XHR = XHR;
 
 	window.addEventListener('DOMContentLoaded', function(e) {
-		var path = '/';
-		var queryStr = e.target.location.search;
-		if (queryStr) {
-			path = new URLSearchParams(queryStr).get('path');
-			if (!path) {
-				path = '/';
-			}
+		var path = window.location.hash.substring(1);
+		if (!path) {
+			path = '/';
 		}
 		Observer.fireEvent('load', path);
 
@@ -95,6 +91,10 @@
 				//from the application would go here
 			}
 		}).send();
+
+		if ('/' != path) {
+			$('#breadcrumb').html('/' + path.replace(/\//g, ' &rsaquo; '));
+		}
 
 		new XHR({
 			url: '/tree_size_by_path',
@@ -111,5 +111,22 @@
 
 	window.addEventListener('message', function(e){
 		Observer.fireEvent('search', e.data);
+	});
+
+	window.addEventListener('hashchange', function(e) {
+		var changed = false;
+		if (!(e !== null && 'oldURL' in e && 'newURL' in e && e.oldURL !== null && e.newURL !== null && e.oldURL && e.newURL)) {
+			changed = true;
+		} else if (e.oldURL != e.newURL && e.oldURL.split("#")[0] == e.newURL.split("#")[0]) {
+			// if the main part of url is changed, skip this hash change event
+			changed = true;
+		}
+		if (!changed) return;
+
+		var path = window.location.hash.substring(1);
+		if (!path) {
+			path = '/';
+		}
+		Observer.fireEvent('hashchange', path);
 	});
 })();
